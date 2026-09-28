@@ -2,19 +2,23 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// MONGODB_URI is not strictly required in development (in-memory fallback
-// in config/db.js), so only JWT_SECRET is enforced here.
-const requiredEnvVars = ['JWT_SECRET'];
+// In production, both JWT_SECRET and MONGODB_URI are required.
+// In development, neither is strictly required (in-memory MongoDB fallback).
+const isProd = process.env.NODE_ENV === 'production';
+const requiredEnvVars = isProd
+  ? ['JWT_SECRET', 'MONGODB_URI']
+  : ['JWT_SECRET'];
 
 const missing = requiredEnvVars.filter((key) => !process.env[key]);
 
 if (missing.length > 0) {
-  // Don't crash immediately in production platforms that inject env vars late;
-  // warn loudly so misconfiguration is visible in logs.
-  console.warn(
+  console.error(
     `[env] Missing required environment variables: ${missing.join(', ')}. ` +
       'Set them in the environment or in a .env file. See .env.example.'
   );
+  if (isProd) {
+    process.exit(1);
+  }
 }
 
 const config = {
